@@ -45,11 +45,11 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
       if (verifyResult.success) {
         Alert.alert('Success', 'Login is done!');
       } else {
-        Alert.alert('Error', 'Not Logined');
+        Alert.alert('Error', 'Not Logined: else');
       }
     } catch (error) {
       console.log(error);
-      Alert.alert('Error', 'Something was wrong');
+      Alert.alert('Error', 'Login going wrong: catch');
     }
   };
 
@@ -81,11 +81,11 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
       if (verifyResult.success) {
         Alert.alert('Success', 'Registarion is done!');
       } else {
-        Alert.alert('Error', 'Registration error');
+        Alert.alert('Error', 'Registration error: else');
       }
     } catch (error) {
       console.log(error);
-      Alert.alert('Error', 'Somthing going wrong');
+      Alert.alert('Error', 'Register going wrong: catch');
     }
   };
 
@@ -111,7 +111,7 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
             label={'Email'}
             inputType="email-address"
             value={email}
-            onChangeText={(text: string) => setEmail(text)}
+            onChangeText={(text: string) => setUsername(text)}
           />
           <InputField
             label={'Password'}
