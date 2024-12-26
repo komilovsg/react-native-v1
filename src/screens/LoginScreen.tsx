@@ -17,84 +17,75 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
 
-  const handlePasskeyRegister = async () => {
+  const [username, setUsername] = useState('admin');
+
+  const handleLogin = async () => {
     try {
-      const response = await fetch(
-        'http://localhost:5005/webauthn/register/generate-options',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({username: email, displayName: email}),
-        },
-      );
+      //получаем challeng с сервера
+      const response = await fetch('http://localhost:5005/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username}),
+      });
 
-      const options = await response.json();
-      const registrationResponse = await Passkey.create(options);
+      const authenticationOptions = await response.json();
 
-      const verifyResponse = await fetch(
-        'http://localhost:5005/webauthn/register/verify',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({...registrationResponse, username: email}),
-        },
-      );
+      //выполняем аутентификацию с помощью passkey
+      const result = await Passkey.get(authenticationOptions);
+
+      //оправляем реузльтут на сервер для проверки
+      const verifyResponse = await fetch('http://localhost:5005/login/verify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, response: result}),
+      });
 
       const verifyResult = await verifyResponse.json();
 
-      if (verifyResult.verified) {
-        Alert.alert('Success', 'Passkey registered successfully!');
+      if (verifyResult.success) {
+        Alert.alert('Success', 'Login is done!');
       } else {
-        Alert.alert('Error', 'Failed to register Passkey.');
+        Alert.alert('Error', 'Not Logined');
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'An error occurred during Passkey registration.');
+      console.log(error);
+      Alert.alert('Error', 'Something was wrong');
     }
   };
 
-  const handlePasskeyLogin = async () => {
+  const handleRegister = async () => {
     try {
-      const response = await fetch(
-        'http://localhost:5005/webauthn/authenticate/generate-options',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({username: email}),
-        },
-      );
+      //шаг первый получаем challenge с сервера
+      const response = await fetch('http://localhost:5005/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username}),
+      });
 
-      const options = await response.json();
-      const authenticationResponse = await Passkey.get(options);
+      const registrationOptions = await response.json();
 
+      //выполняем регистрацию с помощью passkey
+      const result = await Passkey.create(registrationOptions);
+
+      //отправляем результат на сервер для проверки
       const verifyResponse = await fetch(
-        'http://localhost:5005/webauthn/register/verify',
+        'http://localhost:5005/register/verify',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({...authenticationResponse, username: email}),
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username, response: result}),
         },
       );
-
       const verifyResult = await verifyResponse.json();
 
-      if (verifyResult.verified) {
-        Alert.alert('Success', 'Login successful!');
-        login(email, verifyResult.token);
+      if (verifyResult.success) {
+        Alert.alert('Success', 'Registarion is done!');
       } else {
-        Alert.alert('Error', 'Failed to login with Passkey.');
+        Alert.alert('Error', 'Registration error');
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'An error occurred during Passkey login.');
+      console.log(error);
+      Alert.alert('Error', 'Somthing going wrong');
     }
   };
 
@@ -129,7 +120,8 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
             onChangeText={(text: string) => setPassword(text)}
           />
           <TouchableOpacity
-            onPress={handlePasskeyLogin}
+            onPress={handleLogin}
+            // onPress={handlePasskeyLogin}
             style={{
               backgroundColor: 'blue',
               padding: 5,
@@ -147,7 +139,8 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={handlePasskeyRegister}
+            onPress={handleRegister}
+            // onPress={handlePasskeyRegister}
             style={{
               backgroundColor: 'green',
               padding: 5,

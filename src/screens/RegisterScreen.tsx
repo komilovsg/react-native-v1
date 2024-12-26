@@ -4,10 +4,12 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import React, {useState} from 'react';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import DatePicker from 'react-native-date-picker';
+import {Passkey} from 'react-native-passkey';
 
 type RootStackParamList = {
   Home: undefined;
@@ -19,6 +21,43 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
   const [date, setDate] = useState(new Date());
   const [open, setOpen] = useState(false);
   const [dobLabel, setDobLabel] = useState('Date of Birth');
+  const [username, setUsername] = useState('admin');
+
+  const handleRegister = async () => {
+    try {
+      //шаг первый получаем challenge с сервера
+      const response = await fetch('http://localhost:5005/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username}),
+      });
+
+      const registrationOptions = await response.json();
+
+      //выполняем регистрацию с помощью passkey
+      const result = await Passkey.create(registrationOptions);
+
+      //отправляем результат на сервер для проверки
+      const verifyResponse = await fetch(
+        'http://localhost:5005/register/verify',
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username, response: result}),
+        },
+      );
+      const verifyResult = await verifyResponse.json();
+
+      if (verifyResult.success) {
+        Alert.alert('Success', 'Registarion is done!');
+      } else {
+        Alert.alert('Error', 'Registration error');
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Error', 'Somthing going wrong');
+    }
+  };
 
   return (
     <SafeAreaView
@@ -77,6 +116,7 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
           />
           <TouchableOpacity
             onPress={() => navigation.navigate('Home')}
+            // onPress={handleRegister}
             style={{
               backgroundColor: '#AD40AF',
               padding: 5,
